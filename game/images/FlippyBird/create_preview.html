@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建FlippyBird预览图片</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>创建FlippyBird预览图片</h1>
+    <canvas id="previewCanvas" width="200" height="200"></canvas>
+    <button id="saveButton">保存预览图片</button>
+    <p>点击"保存预览图片"按钮，将图片保存为flippy_bird.png，并放置在images/FlippyBird目录下。</p>
+
+    <script>
+        // 获取Canvas元素和上下文
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 绘制背景
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 绘制地面
+        const groundY = canvas.height - 40;
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(0, groundY, canvas.width, 40);
+        
+        // 绘制小鸟
+        const birdX = 80;
+        const birdY = canvas.height / 2;
+        const birdRadius = 20;
+        
+        // 绘制小鸟身体
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(birdX, birdY, birdRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制小鸟眼睛
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(birdX + 10, birdY - 5, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制管道
+        const pipeWidth = 30;
+        const pipeGap = 75;
+        const pipeHeight = 60;
+        
+        // 绘制上管道
+        ctx.fillStyle = '#228b22';
+        ctx.fillRect(120, 0, pipeWidth, pipeHeight);
+        // 绘制管道口
+        ctx.fillStyle = '#006400';
+        ctx.fillRect(115, pipeHeight - 10, pipeWidth + 10, 10);
+        
+        // 绘制下管道
+        ctx.fillRect(120, groundY - pipeHeight, pipeWidth, pipeHeight);
+        // 绘制管道口
+        ctx.fillRect(115, groundY - pipeHeight, pipeWidth + 10, 10);
+        
+        // 绘制游戏名称
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('FlippyBird', canvas.width / 2, 30);
+        
+        // 保存图片功能
+        document.getElementById('saveButton').addEventListener('click', () => {
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = 'flippy_bird.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>

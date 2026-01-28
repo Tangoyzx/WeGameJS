@@ -1,0 +1,35 @@
+{
+  "name": "trae-we-game",
+  "version": "0.0.9",
+  "description": "示例相关说明查阅[新手教程](https://developers.weixin.qq.com/minigame/dev/guide/develop/start.html)",
+  "main": ".eslintrc.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:e2e": "jest tests/e2e/tetris.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tangoyzx/trae-we-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Tangoyzx/trae-we-game/issues"
+  },
+  "homepage": "https://github.com/Tangoyzx/trae-we-game#readme",
+  "devDependencies": {
+    "@babel/core": "^7.28.6",
+    "@babel/preset-env": "^7.28.6",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "miniprogram-automator": "^0.12.1"
+  }
+}

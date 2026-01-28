@@ -9,6 +9,8 @@ import Game2048 from './games/Game2048/Game2048';
 import FlippyBird from './games/FlippyBird/FlippyBird';
 import SnowGame from './games/SnowGame/SnowGame';
 import TetrisGame from './games/TetrisGame/TetrisGame';
+import PlatformJump from './games/PlatformJump/PlatformJump';
+import PlatformJumpECS from './games/PlatformJump/PlatformJumpECS';
 
 /**
  * 游戏状态常量
@@ -37,7 +39,7 @@ export default class Main {
     this.gamesPerPage = 12; // 每页显示的游戏数量（四行三列）
     
     // 导入的游戏类数组（直接导入，不需要映射）
-    this.importedGames = [ThreeGame, Game2048, FlippyBird, SnowGame, TetrisGame];
+    this.importedGames = [ThreeGame, Game2048, FlippyBird, SnowGame, TetrisGame, PlatformJump, PlatformJumpECS];
     
     // 游戏列表，将从游戏类的静态方法获取配置
     this.gameList = [];

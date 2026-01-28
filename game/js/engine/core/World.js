@@ -38,6 +38,12 @@ export default class World {
    * @returns {boolean} 是否成功添加
    */
   addEntity(entity) {
+    // 安全检查
+    if (!entity || !entity.id) {
+      console.warn('Invalid entity provided to addEntity');
+      return false;
+    }
+    
     if (this.entities.has(entity.id)) {
       console.warn(`Entity with id ${entity.id} already exists in world ${this.name}`);
       return false;
@@ -48,8 +54,12 @@ export default class World {
 
     // 通知所有系统有新实体添加
     this.systems.forEach(system => {
-      if (system.matches(entity)) {
-        system.onEntityAdded(entity);
+      try {
+        if (system.matches(entity)) {
+          system.onEntityAdded(entity);
+        }
+      } catch (error) {
+        console.error(`Error in system ${system.getName()} when adding entity ${entity.id}:`, error);
       }
     });
 
@@ -231,13 +241,23 @@ export default class World {
     const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // 转换为秒
     this.lastUpdateTime = currentTime;
 
+    // 安全检查deltaTime
+    if (deltaTime <= 0 || deltaTime > 1.0) {
+      console.warn(`Invalid deltaTime: ${deltaTime}, using default value`);
+      deltaTime = 0.016; // 默认60FPS
+    }
+
     // 按优先级排序系统
     const sortedSystems = this.getSystems().sort((a, b) => a.getPriority() - b.getPriority());
 
     // 更新所有启用的系统
     sortedSystems.forEach(system => {
       if (system.isEnabled()) {
-        system.update(deltaTime);
+        try {
+          system.update(deltaTime);
+        } catch (error) {
+          console.error(`Error updating system ${system.getName()}:`, error);
+        }
       }
     });
 

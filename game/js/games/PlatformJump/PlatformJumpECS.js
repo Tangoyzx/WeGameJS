@@ -60,8 +60,15 @@ export default class PlatformJumpECS extends BaseGame {
     // 游戏状态
     this.gameStatus = this.GAME_STATUS.READY;
     this.score = 0;
-    this.highScore = wx.getStorageSync('platformJumpECSHighScore') || 0;
+    this.highScore = 0; // 将在init方法中安全加载
     this.lives = this.config.initialLives;
+    
+    // 游戏控制
+    this.keys = {
+      left: false,
+      right: false,
+      jump: false
+    };
     
     // 按钮配置
     this.backButton = {
@@ -137,19 +144,23 @@ export default class PlatformJumpECS extends BaseGame {
     }));
     
     // 添加相机组件
-    this.cameraEntity.addComponent({
+    const cameraComponent = {
       name: 'Camera',
       targetY: 0,
       speed: this.config.cameraSpeed,
       update: function(deltaTime) {
         // 相机跟随逻辑
-        const transform = this.cameraEntity.getComponent(Transform);
+        const transform = this.entity.getComponent(Transform);
         const camera = this;
         
         // 平滑跟随目标位置
         transform.y += (camera.targetY - transform.y) * camera.speed * deltaTime;
       }
-    });
+    };
+    this.cameraEntity.addComponent(cameraComponent);
+    
+    // 手动设置entity引用，因为这不是一个Component实例
+    cameraComponent.entity = this.cameraEntity;
   }
 
   /**
@@ -189,7 +200,7 @@ export default class PlatformJumpECS extends BaseGame {
     }));
     
     // 添加玩家控制组件
-    this.playerEntity.addComponent({
+    const playerControllerComponent = {
       name: 'PlayerController',
       speed: this.config.playerSpeed,
       jumpForce: this.config.jumpForce,
@@ -197,8 +208,8 @@ export default class PlatformJumpECS extends BaseGame {
       isJumping: false,
       
       update: function(deltaTime) {
-        const transform = this.playerEntity.getComponent(Transform);
-        const physics = this.playerEntity.getComponent(Physics);
+        const transform = this.entity.getComponent(Transform);
+        const physics = this.entity.getComponent(Physics);
         
         // 处理玩家输入
         if (this.keys.left) {
@@ -217,7 +228,7 @@ export default class PlatformJumpECS extends BaseGame {
         }
         
         // 更新相机目标位置
-        const camera = this.cameraEntity.getComponent('Camera');
+        const camera = this.platformJumpECS.cameraEntity.getComponent('Camera');
         if (camera) {
           camera.targetY = Math.min(transform.y - this.canvas.height / 3, 0);
         }
@@ -227,7 +238,11 @@ export default class PlatformJumpECS extends BaseGame {
           this.loseLife();
         }
       }
-    });
+    };
+    this.playerEntity.addComponent(playerControllerComponent);
+    
+    // 手动设置entity引用，因为这不是一个Component实例
+    playerControllerComponent.entity = this.playerEntity;
     
     // 设置组件引用
     const playerController = this.playerEntity.getComponent('PlayerController');
@@ -235,6 +250,7 @@ export default class PlatformJumpECS extends BaseGame {
     playerController.cameraEntity = this.cameraEntity;
     playerController.canvas = this.canvas;
     playerController.loseLife = this.loseLife.bind(this);
+    playerController.platformJumpECS = this; // Add reference to parent instance
   }
 
   /**
@@ -351,7 +367,8 @@ export default class PlatformJumpECS extends BaseGame {
       visible: true
     }));
     
-    element.addComponent({
+    // 添加背景元素组件
+    const bgElementComponent = {
       name: 'BackgroundElement',
       type: type,
       speed: Math.random() * 0.5 + 0.1,
@@ -368,10 +385,12 @@ export default class PlatformJumpECS extends BaseGame {
           transform.x = Math.random() * this.canvas.width;
         }
       }
-    });
+    };
+    element.addComponent(bgElementComponent);
     
-    const bgElement = element.getComponent('BackgroundElement');
-    bgElement.canvas = this.canvas;
+    // 手动设置entity引用，因为这不是一个Component实例
+    bgElementComponent.entity = element;
+    bgElementComponent.canvas = this.canvas;
     
     return element;
   }
@@ -381,6 +400,20 @@ export default class PlatformJumpECS extends BaseGame {
    */
   init() {
     super.init();
+    
+    // 安全地加载最高分
+    try {
+      if (typeof wx !== 'undefined' && wx.getStorageSync) {
+        this.highScore = wx.getStorageSync('platformJumpECSHighScore') || 0;
+      } else if (typeof localStorage !== 'undefined') {
+        const savedScore = localStorage.getItem('platformJumpECSHighScore');
+        this.highScore = savedScore ? parseInt(savedScore) : 0;
+      }
+    } catch (e) {
+      console.warn('Failed to load high score:', e);
+      this.highScore = 0;
+    }
+    
     this.resetGame();
     console.log('PlatformJumpECS initialized');
   }
@@ -467,6 +500,14 @@ export default class PlatformJumpECS extends BaseGame {
    * 更新游戏逻辑
    */
   updateGameLogic(deltaTime) {
+    // 安全检查deltaTime
+    if (!deltaTime || deltaTime <= 0) {
+      deltaTime = 0.016; // 默认60FPS
+    }
+    
+    // 限制deltaTime避免过大值
+    deltaTime = Math.min(deltaTime, 0.1);
+    
     // 检查平台生成
     this.checkPlatformGeneration();
     
@@ -481,10 +522,16 @@ export default class PlatformJumpECS extends BaseGame {
     const platforms = this.world.getEntitiesByTag('platform');
     const playerTransform = this.playerEntity.getComponent(Transform);
     
+    // 安全检查
+    if (!playerTransform) return;
+    
     // 移除屏幕外的平台并生成新平台
     for (let i = platforms.length - 1; i >= 0; i--) {
       const platform = platforms[i];
       const platformTransform = platform.getComponent(Transform);
+      
+      // 安全检查
+      if (!platformTransform) continue;
       
       // 如果平台在屏幕下方太远，移除它
       if (platformTransform.y - playerTransform.y > this.canvas.height + 100) {
@@ -494,7 +541,16 @@ export default class PlatformJumpECS extends BaseGame {
         // 更新最高分
         if (this.score > this.highScore) {
           this.highScore = this.score;
-          wx.setStorageSync('platformJumpECSHighScore', this.highScore);
+          // 使用安全的存储方法
+          try {
+            if (typeof wx !== 'undefined' && wx.setStorageSync) {
+              wx.setStorageSync('platformJumpECSHighScore', this.highScore);
+            } else if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('platformJumpECSHighScore', this.highScore.toString());
+            }
+          } catch (e) {
+            console.warn('Failed to save high score:', e);
+          }
         }
         
         // 生成新平台
@@ -512,11 +568,21 @@ export default class PlatformJumpECS extends BaseGame {
     const playerPhysics = this.playerEntity.getComponent(Physics);
     const platforms = this.world.getEntitiesByTag('platform');
     
+    // 安全检查
+    if (!playerController || !playerTransform || !playerPhysics) {
+      return;
+    }
+    
     playerController.isOnGround = false;
     
     for (const platform of platforms) {
       const platformTransform = platform.getComponent(Transform);
       const platformPhysics = platform.getComponent(Physics);
+      
+      // 安全检查
+      if (!platformTransform || !platformPhysics) {
+        continue;
+      }
       
       // 检查碰撞
       const collision = playerPhysics.checkCollision(platformPhysics, playerTransform, platformTransform);
@@ -550,14 +616,26 @@ export default class PlatformJumpECS extends BaseGame {
       const playerPhysics = this.playerEntity.getComponent(Physics);
       const camera = this.cameraEntity.getComponent('Camera');
       
+      // 安全检查
+      if (!playerTransform || !playerPhysics) return;
+      
       playerTransform.x = this.canvas.width / 2;
-      playerTransform.y = camera.targetY + this.canvas.height / 2;
+      
+      // 安全检查相机组件
+      if (camera) {
+        playerTransform.y = camera.targetY + this.canvas.height / 2;
+      } else {
+        playerTransform.y = this.canvas.height / 2;
+      }
+      
       playerPhysics.velocityX = 0;
       playerPhysics.velocityY = 0;
       
       const playerController = this.playerEntity.getComponent('PlayerController');
-      playerController.isJumping = false;
-      playerController.isOnGround = false;
+      if (playerController) {
+        playerController.isJumping = false;
+        playerController.isOnGround = false;
+      }
     }
   }
   

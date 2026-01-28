@@ -40,7 +40,20 @@ export default class Entity {
    * @returns {Component|null} 返回组件实例，如果不存在则返回null
    */
   getComponent(componentClass) {
+    // 安全检查
+    if (!componentClass) {
+      console.warn('getComponent called with null or undefined componentClass');
+      return null;
+    }
+    
     const componentName = typeof componentClass === 'string' ? componentClass : componentClass.name;
+    
+    // 安全检查组件名称
+    if (!componentName) {
+      console.warn('Invalid component class provided to getComponent');
+      return null;
+    }
+    
     return this.components.get(componentName) || null;
   }
 

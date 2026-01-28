@@ -107,6 +107,8 @@ export default class PhysicsSystem extends System {
     const transform = entity.getComponent(Transform);
     const physics = entity.getComponent(Physics);
     
+    // 安全检查
+    if (!transform || !physics) return;
     if (physics.isStatic || physics.isSleeping) return;
 
     // 应用全局重力
@@ -147,6 +149,8 @@ export default class PhysicsSystem extends System {
     const transformA = entityA.getComponent(Transform);
     const transformB = entityB.getComponent(Transform);
     
+    // 安全检查
+    if (!physicsA || !physicsB || !transformA || !transformB) return;
     if (!physicsA.collisionEnabled || !physicsB.collisionEnabled) return;
     
     // 检查碰撞
@@ -177,33 +181,39 @@ export default class PhysicsSystem extends System {
     const transform = entity.getComponent(Transform);
     const physics = entity.getComponent(Physics);
     
+    // 安全检查
+    if (!transform || !physics) return;
     if (physics.isStatic) return;
+    if (!this.worldBounds) return;
     
     const bounds = physics.getBounds(transform);
     const worldBounds = this.worldBounds;
     
+    // 安全检查边界
+    if (!bounds) return;
+    
     // 检查左边界
     if (bounds.x < worldBounds.x) {
-      transform.x = worldBounds.x + bounds.width / 2;
-      physics.velocityX = Math.abs(physics.velocityX) * physics.bounceFactor;
+      transform.x = worldBounds.x + (bounds.width || 0) / 2;
+      physics.velocityX = Math.abs(physics.velocityX || 0) * (physics.bounceFactor || 0.5);
     }
     
     // 检查右边界
-    if (bounds.x + bounds.width > worldBounds.x + worldBounds.width) {
-      transform.x = worldBounds.x + worldBounds.width - bounds.width / 2;
-      physics.velocityX = -Math.abs(physics.velocityX) * physics.bounceFactor;
+    if (bounds.x + (bounds.width || 0) > worldBounds.x + worldBounds.width) {
+      transform.x = worldBounds.x + worldBounds.width - (bounds.width || 0) / 2;
+      physics.velocityX = -Math.abs(physics.velocityX || 0) * (physics.bounceFactor || 0.5);
     }
     
     // 检查上边界
     if (bounds.y < worldBounds.y) {
-      transform.y = worldBounds.y + bounds.height / 2;
-      physics.velocityY = Math.abs(physics.velocityY) * physics.bounceFactor;
+      transform.y = worldBounds.y + (bounds.height || 0) / 2;
+      physics.velocityY = Math.abs(physics.velocityY || 0) * (physics.bounceFactor || 0.5);
     }
     
     // 检查下边界
-    if (bounds.y + bounds.height > worldBounds.y + worldBounds.height) {
-      transform.y = worldBounds.y + worldBounds.height - bounds.height / 2;
-      physics.velocityY = -Math.abs(physics.velocityY) * physics.bounceFactor;
+    if (bounds.y + (bounds.height || 0) > worldBounds.y + worldBounds.height) {
+      transform.y = worldBounds.y + worldBounds.height - (bounds.height || 0) / 2;
+      physics.velocityY = -Math.abs(physics.velocityY || 0) * (physics.bounceFactor || 0.5);
     }
   }
 

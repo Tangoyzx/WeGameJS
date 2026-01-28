@@ -298,40 +298,54 @@ export default class Physics extends Component {
    * @returns {Object} 边界框 {x, y, width, height}
    */
   getBounds(transform) {
+    // 安全检查
+    if (!transform) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
+    
     const worldPos = transform.getWorldPosition();
+    
+    // 安全检查世界位置
+    if (!worldPos) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
     
     switch (this.collisionShape) {
       case 'rectangle':
         return {
-          x: worldPos.x - this.collisionWidth / 2,
-          y: worldPos.y - this.collisionHeight / 2,
-          width: this.collisionWidth,
-          height: this.collisionHeight
+          x: worldPos.x - (this.collisionWidth || 0) / 2,
+          y: worldPos.y - (this.collisionHeight || 0) / 2,
+          width: this.collisionWidth || 0,
+          height: this.collisionHeight || 0
         };
       case 'circle':
         return {
-          x: worldPos.x - this.collisionRadius,
-          y: worldPos.y - this.collisionRadius,
-          width: this.collisionRadius * 2,
-          height: this.collisionRadius * 2
+          x: worldPos.x - (this.collisionRadius || 0),
+          y: worldPos.y - (this.collisionRadius || 0),
+          width: (this.collisionRadius || 0) * 2,
+          height: (this.collisionRadius || 0) * 2
         };
       case 'polygon':
         // 计算多边形边界框
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        this.collisionPolygon.forEach(point => {
-          const worldX = worldPos.x + point.x;
-          const worldY = worldPos.y + point.y;
-          minX = Math.min(minX, worldX);
-          minY = Math.min(minY, worldY);
-          maxX = Math.max(maxX, worldX);
-          maxY = Math.max(maxY, worldY);
-        });
-        return {
-          x: minX,
-          y: minY,
-          width: maxX - minX,
-          height: maxY - minY
-        };
+        if (this.collisionPolygon && this.collisionPolygon.length > 0) {
+          this.collisionPolygon.forEach(point => {
+            const worldX = worldPos.x + (point.x || 0);
+            const worldY = worldPos.y + (point.y || 0);
+            minX = Math.min(minX, worldX);
+            minY = Math.min(minY, worldY);
+            maxX = Math.max(maxX, worldX);
+            maxY = Math.max(maxY, worldY);
+          });
+          return {
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY
+          };
+        }
+        // 如果多边形数据无效，返回默认边界
+        return { x: worldPos.x, y: worldPos.y, width: 0, height: 0 };
       default:
         return { x: worldPos.x, y: worldPos.y, width: 0, height: 0 };
     }
@@ -345,7 +359,9 @@ export default class Physics extends Component {
    * @returns {Object|null} 碰撞信息，如果没有碰撞则返回null
    */
   checkCollision(other, transform, otherTransform) {
-    if (!this.collisionEnabled || !other.collisionEnabled) return null;
+    // 安全检查
+    if (!this.collisionEnabled || !other || !other.collisionEnabled) return null;
+    if (!transform || !otherTransform) return null;
     
     // 检查碰撞组和掩码
     if (!this.collisionMask.includes(other.collisionGroup)) return null;
@@ -353,6 +369,9 @@ export default class Physics extends Component {
     
     const bounds1 = this.getBounds(transform);
     const bounds2 = other.getBounds(otherTransform);
+    
+    // 安全检查边界框
+    if (!bounds1 || !bounds2) return null;
     
     // 快速边界框检查
     if (bounds1.x + bounds1.width < bounds2.x ||

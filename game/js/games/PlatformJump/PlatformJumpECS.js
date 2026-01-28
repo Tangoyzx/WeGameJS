@@ -143,7 +143,7 @@ export default class PlatformJumpECS extends BaseGame {
       speed: this.config.cameraSpeed,
       update: function(deltaTime) {
         // 相机跟随逻辑
-        const transform = this.entity.getComponent(Transform);
+        const transform = this.cameraEntity.getComponent(Transform);
         const camera = this;
         
         // 平滑跟随目标位置
@@ -197,8 +197,8 @@ export default class PlatformJumpECS extends BaseGame {
       isJumping: false,
       
       update: function(deltaTime) {
-        const transform = this.entity.getComponent(Transform);
-        const physics = this.entity.getComponent(Physics);
+        const transform = this.playerEntity.getComponent(Transform);
+        const physics = this.playerEntity.getComponent(Physics);
         
         // 处理玩家输入
         if (this.keys.left) {

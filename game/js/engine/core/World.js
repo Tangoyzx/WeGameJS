@@ -1,3 +1,5 @@
+import Entity from './Entity.js';
+
 /**
  * World 世界类
  * 管理实体、组件和系统的容器
